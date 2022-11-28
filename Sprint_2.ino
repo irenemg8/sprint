@@ -1,5 +1,6 @@
 #include <Adafruit_ADS1X15.h>                   //Incluimos la librería
-#include <LiquidCrystal_I2C.h>                  //Incluimos librería de la LCD
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>                  //Includimos la librería lcd
 #include <ESP8266WiFi.h>                        //Incluimos la librería de la WIFI
 
 //----------------------------------------------------------------------------------------
@@ -12,8 +13,8 @@
 Adafruit_ADS1X15 ads1115;                       // declaramos el ADS1115
 
 //--- variables Humedad ---     
-const int AirValue  = 30295;                    // Medimos valor en seco
-const int WaterValue = 17855;                   // Medimos valor en agua
+const int AirValue  = 30125;                    // Medimos valor en seco
+const int WaterValue = 24575;                   // Medimos valor en agua
 
 //--- variables Salinidad ---
 const int SaltValue =2600  ;                    // Valor con sal   
@@ -21,7 +22,7 @@ const int WithoutSaltValue = 1800;              // Valor sin sal
 
 //--- variables pH ---
 #define channelValue 0
-#define Offset 0
+#define Offset 2
 #define samplingInterval 20
 #define printInterval 800
 #define ArrayLength 40 //numero de muestras
@@ -31,13 +32,14 @@ int pHArrayIndex=0;
 
 //------ Declaramos las variables y las conexiones ------------------------------------
   double adc0;
-  double pH;             //Cables azules
+  double Ph;             //Cables azules
   double adc1;                   
-  double humedad;        //Cables marrones
+  double Humedad;        //Cables marrones
   double adc2;
-  double salinidad;      //Cables verdes
+  double Salinidad;      //Cables verdes
   double adc3;
-  double temperatura;    //Cables morado
+  double Temperatura;    //Cables morado
+  double vo;             //Valor de la tensión
 
        //Cables a tierra -> naranja
        //Cables a voltaje -> amarillo
@@ -46,8 +48,6 @@ int pHArrayIndex=0;
 
 //----------------LCD-------------------------------------------------------------------
 LiquidCrystal_I2C lcd(0x27, 16, 2);             //La LCD tiene 16 columnas y 2 filas
-
-
 
 
 
@@ -71,8 +71,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);             //La LCD tiene 16 columnas y 2 f
   const char WiFiSSID[] = "GTI1";
   const char WiFiPSK[] = "1PV.arduino.Toledo";
 #else //Conexion fuera de la UPV
-  const char WiFiSSID[] = "iPhone de Elena";
-  const char WiFiPSK[] = "1234567890";        
+  const char WiFiSSID[] = "Irene";              //iPhone de Elena
+  const char WiFiPSK[] = "0208KEY1402TE";        //1234567890
 #endif
 
 
@@ -251,12 +251,13 @@ void setup() {
   Serial.println("Tomando medidas..."); 
 
 //-------------- LCD --------------------------------------------------------------------
-   //lcd.begin(0);                      
+  lcd.init();                                      
    lcd.setCursor(0, 0);
-   lcd.print("Linea 1");
+   lcd.backlight();
+   lcd.print("Inicializando...");
    lcd.setCursor(0, 1);
-   lcd.print("Linea 2");
-   delay(2500);
+   lcd.print("Buenos Dias :)");
+   delay(4000);
    lcd.clear();
 
 // ----------- WIFI ---------------------------------------------------------------------
@@ -286,11 +287,12 @@ void setup() {
 //--------------------------------------------  
 // PH
 //---------------------------------------------
-double funcionpH(){
+double funcionph(){
+ 
   int16_t adc0 = ads1115.readADC_SingleEnded(0);
   double voltage= (adc0*4.096)/ (pow(2,15)-1);        //convertir la lectura a tension
-  double pH = (3.5*voltage + Offset);
-  return pH;
+  double Ph = (3.5*voltage + Offset);
+  return Ph;
 }
 
 
@@ -300,8 +302,8 @@ double funcionpH(){
 //---------------------------------------------
 double funcionHumedad(){
   int16_t adc1 = ads1115.readADC_SingleEnded(1);
-  double humedad = 100*AirValue/(AirValue-WaterValue)-adc1*100/(AirValue-WaterValue);
-return humedad;
+  double Humedad = 100*AirValue/(AirValue-WaterValue)-adc1*100/(AirValue-WaterValue);
+return Humedad;
 }
 
 
@@ -311,9 +313,7 @@ return humedad;
 //---------------------------------------------
 double funcionSalinidad(){                                                  //Esperar 100ms
    int16_t adc2 =ads1115.readADC_SingleEnded(2);                         //Muestrear la tensión del sensor de salinidad                     
-   double salinidad = 100* WithoutSaltValue / (WithoutSaltValue-SaltValue) - adc2*100/(WithoutSaltValue-SaltValue);
-       salinidad = salinidad/100;
-return salinidad;
+return Salinidad;
 }
 
 
@@ -323,11 +323,12 @@ return salinidad;
 //---------------------------------------------
 double funcionTemperatura(){
   int16_t adc3 = ads1115.readADC_SingleEnded(3);  
-  float m=0.0348;
-  float b = 0.79;
-  double Vo = (adc0 * 4.096 / 32000);             
-  double temperatura = ((Vo - b) /m);                  //Fórumla vista en clase
-return temperatura;
+  double m = 37*pow(10, -3);
+  double b = 0.79;
+  double vo = (adc3 * 4.096) / 34890;             
+  double Temperatura = (((vo*0.459)-b)/m);
+  Serial.println(Temperatura);
+return Temperatura;
 }
 
 
@@ -335,36 +336,36 @@ return temperatura;
 //---------------------------------------------------  
 //------- Void loop ---------------------------------
 void loop() {
-double pH = funcionpH();
-double humedad = funcionHumedad();
-double salinidad = funcionSalinidad();
-double temperatura = funcionTemperatura();
+double Ph = funcionph();
+double Humedad = funcionHumedad();
+double Salinidad = funcionSalinidad();
+double Temperatura = funcionTemperatura();
 
 
 
 //-------------------- WIFI --------------------------
-String data[ NUM_FIELDS_TO_SEND + 1];  // Podemos enviar hasta 8 datos
+String data[ 4 + 1];  // Podemos enviar hasta 8 datos
 
     
-    data[ 1 ] = String(pH); //Escribimos el dato de pH
+    data[ 1 ] = String(Ph); //Escribimos el dato de pH
     #ifdef PRINT_DEBUG_MESSAGES
-        Serial.print( "pH = " );
+        Serial.print( "PH = " );
         Serial.println( data[ 1 ] );
     #endif
 
-    data[ 2 ] = String(humedad); //Escribimos el dato de humedad
+    data[ 2 ] = String(Humedad); //Escribimos el dato de humedad
     #ifdef PRINT_DEBUG_MESSAGES
         Serial.print( "Humedad = " );
         Serial.println( data[ 2 ] );
     #endif
 
-    data[ 3 ] = String(salinidad); //Escribimos el dato de salinidad
+    data[ 3 ] = String(Salinidad); //Escribimos el dato de salinidad
     #ifdef PRINT_DEBUG_MESSAGES
         Serial.print( "Salinidad = " );
         Serial.println( data[ 3 ] );
     #endif
 
-    data[ 2 ] = String(temperatura); //Escribimos el dato de temperatura
+    data[ 4 ] = String(Temperatura); //Escribimos el dato de temperatura
     #ifdef PRINT_DEBUG_MESSAGES
         Serial.print( "Temperatura = " );
         Serial.println( data[ 4 ] );
@@ -384,16 +385,16 @@ String data[ NUM_FIELDS_TO_SEND + 1];  // Podemos enviar hasta 8 datos
 
 //-----------------------------------------------------------------------
 //---------------LCD-----------------------------------------------------
-  // Limpiamos la pantalla
+ // Limpiamos la pantalla
   lcd.clear();
 
   // Situamos el cursor en la columna 0 fila 0
   lcd.setCursor(0,0);
-  lcd.print("Humedad: ");                          // Escribimos lo que va a mostrar en pantalla
+  lcd.print("Humedad:");                          // Escribimos lo que va a mostrar en pantalla
  
   // Situamos el cursor en la columna 0 fila 1
   lcd.setCursor(0,1);
-  lcd.print(humedad);                              // Escribimos lo que va a mostrar en pantalla
+  lcd.print(Humedad);                              // Escribimos lo que va a mostrar en pantalla
 
   delay(2000);
   
@@ -403,11 +404,11 @@ String data[ NUM_FIELDS_TO_SEND + 1];  // Podemos enviar hasta 8 datos
 
   // Situamos el cursor en la columna 0 fila 0
   lcd.setCursor(0,0);
-  lcd.print("Salinidad: ");                          // Escribimos lo que va a mostrar en pantalla
+  lcd.print("Salinidad:");                          // Escribimos lo que va a mostrar en pantalla
  
   // Situamos el cursor en la columna 0 fila 1
   lcd.setCursor(0,1);
-  lcd.print(salinidad);                              // Escribimos lo que va a mostrar en pantalla
+  lcd.print(Salinidad);                              // Escribimos lo que va a mostrar en pantalla
 
   delay(2000);
   
@@ -417,44 +418,58 @@ String data[ NUM_FIELDS_TO_SEND + 1];  // Podemos enviar hasta 8 datos
 
   // Situamos el cursor en la columna 0 fila 0
   lcd.setCursor(0,0);
-  lcd.print("pH: ");                          // Escribimos lo que va a mostrar en pantalla
+  lcd.print("Ph:");                          // Escribimos lo que va a mostrar en pantalla
  
   // Situamos el cursor en la columna 0 fila 1
   lcd.setCursor(0,1);
-  lcd.print(pH);                              // Escribimos lo que va a mostrar en pantalla
+  lcd.print(Ph);                              // Escribimos lo que va a mostrar en pantalla
+
+  delay(2000);
+  
+//------------- Dejamos un tiempo para leerlo ----------------------------
+  // Limpiamos la pantalla
+  lcd.clear();
+
+  // Situamos el cursor en la columna 0 fila 0
+  lcd.setCursor(0,0);
+  lcd.print("Temperatura:");                          // Escribimos lo que va a mostrar en pantalla
+ 
+  // Situamos el cursor en la columna 0 fila 1
+  lcd.setCursor(0,1);
+  lcd.print(Temperatura);                              // Escribimos lo que va a mostrar en pantalla
 
   delay(2000);
   
 //------------- Dejamos un tiempo para leerlo ----------------------------
 
-  
+
+
   // ---------------------------------------------------------------------
   // ------ Imprimir en pantalla con el monitor serie --------------------
   // ---------------------------------------------------------------------
   // Escribimos el pH
   // ---------------------------------------------------------------------
-  Serial.println(adc0);
+ // Serial.println(adc0);
   Serial.print("pH: ");
-  Serial.print(pH);
+  Serial.println(Ph);
   // ---------------------------------------------------------------------
   // Escribimos la humedad
   // ---------------------------------------------------------------------
-  Serial.println(adc1);
+ // Serial.println(adc1);
   Serial.print("Humedad (%): ");
-  Serial.print(humedad);
+  Serial.print(Humedad);
   Serial.println("%");
   // ---------------------------------------------------------------------
   // Escribimos la salinidad
   // ---------------------------------------------------------------------
-  Serial.println(adc2);
+ // Serial.println(adc2);
   Serial.print("Salinidad (%): ");
-  Serial.print(salinidad);
+  Serial.print(adc2);
   Serial.println("%");
   // ---------------------------------------------------------------------
   // Escribimos la temperatura
   // ---------------------------------------------------------------------
-  Serial.println(adc3);
   Serial.print("Temperatura(º): ");
-  Serial.print(temperatura);
+  Serial.print(Temperatura);
   Serial.println("º");
 }
