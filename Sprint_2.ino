@@ -515,5 +515,5 @@ double Luminosidad = funcionLuminosidad();
   // ---------------------------------------------------------------------
   Serial.print("Luminosidad: ");
   Serial.print(Luminosidad);
-  Serial.println("º");
+  Serial.println("%");
 }
