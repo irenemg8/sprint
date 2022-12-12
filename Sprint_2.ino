@@ -5,15 +5,15 @@
 
 //----------------------------------------------------------------------------------------
 
-//El circuito de pH se conecta al puerto 0 (adc0)
-//El circuito de humedad se conecta al puerto 1 (adc1)
-//El circuito de salinidad se conecta al puerto 2 (adc2)
-//El circuito de temperatura se conecta al puerto 3 (adc3)
+//El circuito de humedad se conecta al puerto 0 (adc0)
+//El circuito de pH se conecta al puerto 1 (adc1)
+//El circuito de temperatura se conecta al puerto 2 (adc2)
+//El circuito de luminosidad se conecta al puerto 3 (adc3)
 
 Adafruit_ADS1X15 ads1115;                       // declaramos el ADS1115
 
 //--- variables Humedad ---     
-const int AirValue  = 30125;                    // Medimos valor en seco
+const int AirValue  = 30130;                    // Medimos valor en seco
 const int WaterValue = 24575;                   // Medimos valor en agua
 
 //--- variables Salinidad ---
@@ -289,8 +289,8 @@ void setup() {
 //---------------------------------------------
 double funcionph(){
  
-  int16_t adc0 = ads1115.readADC_SingleEnded(0);
-  double voltage= (adc0*4.096)/ (pow(2,15)-1);        //convertir la lectura a tension
+  int16_t adc1 = ads1115.readADC_SingleEnded(0);
+  double voltage= (adc1*4.096)/ (pow(2,15)-1);        //convertir la lectura a tension
   double Ph = (3.5*voltage + Offset);
   return Ph;
 }
@@ -301,7 +301,7 @@ double funcionph(){
 // HUMEDAD
 //---------------------------------------------
 double funcionHumedad(){
-  int16_t adc1 = ads1115.readADC_SingleEnded(1);
+  int16_t adc0 = ads1115.readADC_SingleEnded(0);
   double Humedad = 100*AirValue/(AirValue-WaterValue)-adc1*100/(AirValue-WaterValue);
 return Humedad;
 }
@@ -311,8 +311,7 @@ return Humedad;
 //--------------------------------------------  
 // SALINIDAD
 //---------------------------------------------
-double funcionSalinidad(){                                                  //Esperar 100ms
-   int16_t adc2 =ads1115.readADC_SingleEnded(2);                         //Muestrear la tensión del sensor de salinidad                     
+double funcionSalinidad(){                             //Muestrear la tensión del sensor de salinidad                     
 return Salinidad;
 }
 
@@ -322,7 +321,7 @@ return Salinidad;
 // TEMPERATURA
 //---------------------------------------------
 double funcionTemperatura(){
-  int16_t adc3 = ads1115.readADC_SingleEnded(3);  
+  int16_t adc2 = ads1115.readADC_SingleEnded(2);  
   double m = 37*pow(10, -3);
   double b = 0.79;
   double vo = (adc3 * 4.096) / 34890;             
@@ -333,18 +332,23 @@ return Temperatura;
 
 
 
-//---------------------------------------------------  
-//------- Void loop ---------------------------------
-void loop() {
-double Ph = funcionph();
-double Humedad = funcionHumedad();
-double Salinidad = funcionSalinidad();
-double Temperatura = funcionTemperatura();
-
+//--------------------------------------------  
+// LUMINOSIDAD
+//---------------------------------------------
+double funcionLuminosidad(){
+  int16_t adc3 = ads1115.readADC_SingleEnded(3);  
+  double m = 37*pow(10, -3);
+  double b = 0.79;
+  double vo = (adc3 * 4.096) / 34890;             
+  double Temperatura = (((vo*0.459)-b)/m);
+  Serial.println(Temperatura);
+return Temperatura;
+}
 
 
 //-------------------- WIFI --------------------------
-String data[ 4 + 1];  // Podemos enviar hasta 8 datos
+double funcionWifi(){
+String data[ 5 + 1];  // Podemos enviar hasta 8 datos
 
     
     data[ 1 ] = String(Ph); //Escribimos el dato de pH
@@ -370,6 +374,12 @@ String data[ 4 + 1];  // Podemos enviar hasta 8 datos
         Serial.print( "Temperatura = " );
         Serial.println( data[ 4 ] );
     #endif
+
+     data[ 5 ] = String(Temperatura); //Escribimos el dato de temperatura
+    #ifdef PRINT_DEBUG_MESSAGES
+        Serial.print( "Luminosidad = " );
+        Serial.println( data[ 5 ] );
+    #endif
     
     //Selecciona si quieres enviar con GET(ThingSpeak o Dweet) o con POST(ThingSpeak)
     //HTTPPost( data, NUM_FIELDS_TO_SEND );
@@ -380,6 +390,19 @@ String data[ 4 + 1];  // Podemos enviar hasta 8 datos
    // Serial.print( "Goodnight" );
    // ESP.deepSleep( sleepTimeSeconds * 1000000 );
     
+}
+
+
+//---------------------------------------------------  
+//------- Void loop ---------------------------------
+void loop() {
+double Ph = funcionph();
+double Humedad = funcionHumedad();
+double Salinidad = funcionSalinidad();
+double Temperatura = funcionTemperatura();
+double Wifi = funcionWifi();
+double Luminosidad = funcionLuminosidad();
+
 
 
 
@@ -442,6 +465,21 @@ String data[ 4 + 1];  // Podemos enviar hasta 8 datos
   
 //------------- Dejamos un tiempo para leerlo ----------------------------
 
+// Limpiamos la pantalla
+  lcd.clear();
+
+  // Situamos el cursor en la columna 0 fila 0
+  lcd.setCursor(0,0);
+  lcd.print("Luminosidad:");                          // Escribimos lo que va a mostrar en pantalla
+ 
+  // Situamos el cursor en la columna 0 fila 1
+  lcd.setCursor(0,1);
+  lcd.print(Luminosidad);                              // Escribimos lo que va a mostrar en pantalla
+
+  delay(2000);
+  
+//------------- Dejamos un tiempo para leerlo ----------------------------
+
 
 
   // ---------------------------------------------------------------------
@@ -471,5 +509,11 @@ String data[ 4 + 1];  // Podemos enviar hasta 8 datos
   // ---------------------------------------------------------------------
   Serial.print("Temperatura(º): ");
   Serial.print(Temperatura);
+  Serial.println("º");
+   // ---------------------------------------------------------------------
+  // Escribimos la luminosidad
+  // ---------------------------------------------------------------------
+  Serial.print("Luminosidad: ");
+  Serial.print(Luminosidad);
   Serial.println("º");
 }
