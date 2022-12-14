@@ -1,3 +1,4 @@
+
 #include <Adafruit_ADS1X15.h>                   //Incluimos la librería
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>                  //Includimos la librería lcd
@@ -22,7 +23,7 @@ const int WithoutSaltValue = 1800;              // Valor sin sal
 
 //--- variables pH ---
 #define channelValue 0
-#define Offset 2
+#define Offset 0
 #define samplingInterval 20
 #define printInterval 800
 #define ArrayLength 40 //numero de muestras
@@ -40,6 +41,7 @@ int pHArrayIndex=0;
   double adc3;
   double Temperatura;    //Cables morado
   double vo;             //Valor de la tensión
+  double Luminosidad; 
 
        //Cables a tierra -> naranja
        //Cables a voltaje -> amarillo
@@ -285,11 +287,10 @@ void setup() {
 
 
 //--------------------------------------------  
-// PH
+// PH          - adc1 -
 //---------------------------------------------
 double funcionph(){
- 
-  int16_t adc1 = ads1115.readADC_SingleEnded(0);
+  int16_t adc1 = ads1115.readADC_SingleEnded(1);
   double voltage= (adc1*4.096)/ (pow(2,15)-1);        //convertir la lectura a tension
   double Ph = (3.5*voltage + Offset);
   return Ph;
@@ -298,11 +299,17 @@ double funcionph(){
 
 
 //--------------------------------------------  
-// HUMEDAD
+// HUMEDAD      - adc 0 -
 //---------------------------------------------
 double funcionHumedad(){
-  int16_t adc0 = ads1115.readADC_SingleEnded(0);
-  double Humedad = 100*AirValue/(AirValue-WaterValue)-adc1*100/(AirValue-WaterValue);
+ int16_t adc0 = ads1115.readADC_SingleEnded(0);
+  double Humedad = 100*AirValue/(AirValue-WaterValue)-adc0*100/(AirValue-WaterValue);
+  if (Humedad > 100){
+    Humedad = 100;
+  }
+  if (Humedad < 5){
+    Humedad = 0;
+  }
 return Humedad;
 }
 
@@ -312,42 +319,59 @@ return Humedad;
 // SALINIDAD
 //---------------------------------------------
 double funcionSalinidad(){                             //Muestrear la tensión del sensor de salinidad                     
+ if (Salinidad > 100){
+    Salinidad = 100;
+  }
+  if (Salinidad < 5){
+    Salinidad = 0;
+  }
 return Salinidad;
 }
 
 
 
 //--------------------------------------------  
-// TEMPERATURA
+// TEMPERATURA     - adc2 -
 //---------------------------------------------
 double funcionTemperatura(){
   int16_t adc2 = ads1115.readADC_SingleEnded(2);  
   double m = 37*pow(10, -3);
   double b = 0.79;
-  double vo = (adc3 * 4.096) / 34890;             
-  double Temperatura = (((vo*0.459)-b)/m);
-  Serial.println(Temperatura);
+  double vo = (adc2 * 4.096) / 32767;             
+  double Temperatura = ((vo-b)/m);
 return Temperatura;
+
 }
 
 
 
 //--------------------------------------------  
-// LUMINOSIDAD
+// LUMINOSIDAD      - adc 3 -
 //---------------------------------------------
 double funcionLuminosidad(){
-  int16_t adc3 = ads1115.readADC_SingleEnded(3);  
-  double m = 37*pow(10, -3);
-  double b = 0.79;
-  double vo = (adc3 * 4.096) / 34890;             
-  double Temperatura = (((vo*0.459)-b)/m);
-  Serial.println(Temperatura);
-return Temperatura;
+  int16_t adc3=ads1115.readADC_SingleEnded(3);
+  float Luminosidad=(32767/4.096)*adc3;
 }
 
 
+
+
+
+//---------------------------------------------------  
+//------- Void loop ---------------------------------
+
+void loop(){
+double Ph = funcionph();
+double Humedad = funcionHumedad();
+double Salinidad = funcionSalinidad();
+double Temperatura = funcionTemperatura();
+double Luminosidad = funcionLuminosidad();
+
+
+
+
+
 //-------------------- WIFI --------------------------
-double funcionWifi(){
 String data[ 5 + 1];  // Podemos enviar hasta 8 datos
 
     
@@ -386,28 +410,16 @@ String data[ 5 + 1];  // Podemos enviar hasta 8 datos
     HTTPGet( data, NUM_FIELDS_TO_SEND );
 
     //Selecciona si quieres un retardo de 15seg para hacer pruebas o dormir el SparkFun
-    //delay( 15000 );   
-   // Serial.print( "Goodnight" );
-   // ESP.deepSleep( sleepTimeSeconds * 1000000 );
-    
-}
-
-
-//---------------------------------------------------  
-//------- Void loop ---------------------------------
-void loop() {
-double Ph = funcionph();
-double Humedad = funcionHumedad();
-double Salinidad = funcionSalinidad();
-double Temperatura = funcionTemperatura();
-double Wifi = funcionWifi();
-double Luminosidad = funcionLuminosidad();
+//   delay( 15000 );   
+//   Serial.print( "Goodnight" );
+//   ESP.deepSleep( sleepTimeSeconds * 1000000 );
 
 
 
 
 //-----------------------------------------------------------------------
 //---------------LCD-----------------------------------------------------
+
  // Limpiamos la pantalla
   lcd.clear();
 
@@ -482,6 +494,7 @@ double Luminosidad = funcionLuminosidad();
 
 
 
+
   // ---------------------------------------------------------------------
   // ------ Imprimir en pantalla con el monitor serie --------------------
   // ---------------------------------------------------------------------
@@ -502,7 +515,7 @@ double Luminosidad = funcionLuminosidad();
   // ---------------------------------------------------------------------
  // Serial.println(adc2);
   Serial.print("Salinidad (%): ");
-  Serial.print(adc2);
+  Serial.print(Salinidad);
   Serial.println("%");
   // ---------------------------------------------------------------------
   // Escribimos la temperatura
@@ -513,7 +526,11 @@ double Luminosidad = funcionLuminosidad();
    // ---------------------------------------------------------------------
   // Escribimos la luminosidad
   // ---------------------------------------------------------------------
-  Serial.print("Luminosidad: ");
+  Serial.print("Intensidad lumínica: ");
   Serial.print(Luminosidad);
-  Serial.println("%");
+
+
+deepSleep(3000);            //DeepSleep cada 3 segundos
+                            // unir los pines 16 y reset después de haber subido el código a la placa
+
 }
