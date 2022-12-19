@@ -318,13 +318,22 @@ return Humedad;
 // SALINIDAD
 //---------------------------------------------
 double funcionSalinidad(){                             //Muestrear la tensión del sensor de salinidad                     
- if (Salinidad > 100){
-    Salinidad = 100;
+int16_t adc0;
+  digitalWrite(5, HIGH);
+  delay(100);
+
+  adc0 = analogRead(A0);
+  digitalWrite(5, LOW);
+  delay(100);                                         //mapeamos el valor leido para un porcentaje entre 0 a 100
+   
+  Salinidad=map(adc0,540,910,0,100);                  //limitamos los valores entre 0 y 100 para minimizar errores
+  if(Salinidad>=100){
+    Salinidad=100;
   }
-  if (Salinidad < 5){
-    Salinidad = 0;
+  if(Salinidad<=0){
+    Salinidad=0;
   }
-return Salinidad;
+  return (Salinidad);
 }
 
 
@@ -339,7 +348,6 @@ double funcionTemperatura(){
   double vo = (adc2 * 4.096) / 32767;             
   double Temperatura = ((vo-b)/m);
 return Temperatura;
-
 }
 
 
@@ -349,7 +357,8 @@ return Temperatura;
 //---------------------------------------------
 double funcionLuminosidad(){
   int16_t adc3=ads1115.readADC_SingleEnded(3);
-  float Luminosidad=(32767/4.096)*adc3;
+  double Luminosidad=(adc3*4.096)/32767;
+return Luminosidad;
 }
 
 
