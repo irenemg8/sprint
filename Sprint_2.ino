@@ -72,8 +72,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);             //La LCD tiene 16 columnas y 2 f
   const char WiFiSSID[] = "GTI1";
   const char WiFiPSK[] = "1PV.arduino.Toledo";
 #else //Conexion fuera de la UPV
-  const char WiFiSSID[] = "Irene";              //iPhone de Elena
-  const char WiFiPSK[] = "0208KEY1402TE";        //1234567890
+  const char WiFiSSID[] = "iPhone de Elena";              //iPhone de Elena
+  const char WiFiPSK[] = "elenilla";        //1234567890
 #endif
 
 
@@ -101,7 +101,7 @@ WiFiClient client;
 
 #ifdef REST_SERVER_THINGSPEAK 
   const char Rest_Host[] = "api.thingspeak.com";
-  String MyWriteAPIKey="98S01TPNU1JL3IM7"; // Escribe la clave de tu canal ThingSpeak
+  String MyWriteAPIKey="98S01TPNU1JL3IM7"; // Escribe la clave de tu canal ThingSpeak   98S01TPNU1JL3IM7    Q4KUZ1HQEV21LEIG
 #else 
   const char Rest_Host[] = "dweet.io";
   String MyWriteAPIKey="PruebaGTI"; // Escribe la clave de tu canal Dweet
@@ -303,6 +303,7 @@ double funcionph(){
 double funcionHumedad(){
  int16_t adc0 = ads1115.readADC_SingleEnded(0);
   double Humedad = 100*AirValue/(AirValue-WaterValue)-adc0*100/(AirValue-WaterValue);
+  //  Humedad=map(adc0,529,540,0,100);
   if (Humedad > 100){
     Humedad = 100;
   }
@@ -317,20 +318,23 @@ return Humedad;
 //--------------------------------------------  
 // SALINIDAD
 //---------------------------------------------
-double funcionSalinidad(){                             //Muestrear la tensión del sensor de salinidad                     
-int16_t adc0;
+double funcionSalinidad(){
+  int16_t adc0;
   digitalWrite(5, HIGH);
-  delay(100);
+  delay(1000);
 
   adc0 = analogRead(A0);
   digitalWrite(5, LOW);
-  delay(100);                                         //mapeamos el valor leido para un porcentaje entre 0 a 100
-   
-  Salinidad=map(adc0,540,910,0,100);                  //limitamos los valores entre 0 y 100 para minimizar errores
-  if(Salinidad>=100){
+  delay(1000);
+   //mapeamos el valor leido para un porcentaje entre 0 a 100
+  Salinidad=map(adc0,540,910,0,100);
+  //limitamos los valores entre 0 y 100 para minimizar errores
+  if(Salinidad>=100)
+  {
     Salinidad=100;
   }
-  if(Salinidad<=0){
+  if(Salinidad<=0)
+  {
     Salinidad=0;
   }
   return (Salinidad);
@@ -535,7 +539,7 @@ String data[ 5 + 1];  // Podemos enviar hasta 8 datos
   // Escribimos la luminosidad
   // ---------------------------------------------------------------------
   Serial.print("Intensidad lumínica: ");
-  Serial.print(Luminosidad);
+  Serial.println(Luminosidad);
 
 
 //deepSleep(3000);            //DeepSleep cada 3 segundos
