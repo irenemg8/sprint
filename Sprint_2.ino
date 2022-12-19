@@ -1,4 +1,3 @@
-
 #include <Adafruit_ADS1X15.h>                   //Incluimos la librería
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>                  //Includimos la librería lcd
@@ -530,7 +529,7 @@ String data[ 5 + 1];  // Podemos enviar hasta 8 datos
   Serial.print(Luminosidad);
 
 
-deepSleep(3000);            //DeepSleep cada 3 segundos
+//deepSleep(3000);            //DeepSleep cada 3 segundos
                             // unir los pines 16 y reset después de haber subido el código a la placa
 
 }
