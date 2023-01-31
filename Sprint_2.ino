@@ -17,8 +17,8 @@ const int AirValue  = 30130;                    // Medimos valor en seco
 const int WaterValue = 24575;                   // Medimos valor en agua
 
 //--- variables Salinidad ---
-const int SaltValue =2600  ;                    // Valor con sal   
-const int WithoutSaltValue = 1800;              // Valor sin sal
+const double SaltValue =17631;                    // Valor con sal   2600
+const double WithoutSaltValue = 17631;              // Valor sin sal   1800
 
 //--- variables pH ---
 #define channelValue 0
@@ -72,8 +72,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);             //La LCD tiene 16 columnas y 2 f
   const char WiFiSSID[] = "GTI1";
   const char WiFiPSK[] = "1PV.arduino.Toledo";
 #else //Conexion fuera de la UPV
-  const char WiFiSSID[] = "iPhone de Elena";              //iPhone de Elena
-  const char WiFiPSK[] = "elenilla";        //1234567890
+  const char WiFiSSID[] = "Irene";              //iPhone de Elena
+  const char WiFiPSK[] = "0208KEY1402TE";        //1234567890
 #endif
 
 
@@ -303,7 +303,7 @@ double funcionph(){
 double funcionHumedad(){
  int16_t adc0 = ads1115.readADC_SingleEnded(0);
   double Humedad = 100*AirValue/(AirValue-WaterValue)-adc0*100/(AirValue-WaterValue);
-  //  Humedad=map(adc0,529,540,0,100);
+  //  Humedad=map(adc0,-401.,540,0,100);
   if (Humedad > 100){
     Humedad = 100;
   }
@@ -327,7 +327,7 @@ double funcionSalinidad(){
   digitalWrite(5, LOW);
   delay(1000);
    //mapeamos el valor leido para un porcentaje entre 0 a 100
-  Salinidad=map(adc0,540,910,0,100);
+  Salinidad=map(adc0,1024,500,0,100);
   //limitamos los valores entre 0 y 100 para minimizar errores
   if(Salinidad>=100)
   {
@@ -525,7 +525,8 @@ String data[ 5 + 1];  // Podemos enviar hasta 8 datos
   // ---------------------------------------------------------------------
   // Escribimos la salinidad
   // ---------------------------------------------------------------------
- // Serial.println(adc2);
+   Serial.print("ADC0: ");
+ Serial.println(adc0);
   Serial.print("Salinidad (%): ");
   Serial.print(Salinidad);
   Serial.println("%");
